@@ -5,5 +5,5 @@ As basys, this project consists of a C++ with QT interface, to be able to genera
 
 In this case, this interface will use a USB-GPIB adapter, like shown below, although there can be other variations like e.g. ethernet-GPIB, this will be the cheapest and quickest development path to be taken. 
 
-![Logo](DIAGRAMS/USE_CASES/GPIB_UC.png)
+![Logo](DIAGRAMS/USE_CASES/GPIB_UC.jpg)
 
