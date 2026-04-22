@@ -7,4 +7,6 @@ include_directories(.)
 
 add_executable(C__
         main.cpp
-        main.h)
+        main.h
+        cmake-build-debug/SerialPort.cpp
+        cmake-build-debug/SerialPort.h)
