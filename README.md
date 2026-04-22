@@ -1,5 +1,5 @@
 # GPIB_INTERFACE
-Development of a GPIB based interface to communicate with benchtop lab equipment through SCPI commands.
+Development of a GPIB (General Purpose Interface Bus) based interface to communicate with benchtop lab equipment through SCPI commands.
 
 As basys, this project consists of a C++ with QT interface, to be able to generate SCPI queries for multiples workbench instruments, thus automating measurements workflow.
 
