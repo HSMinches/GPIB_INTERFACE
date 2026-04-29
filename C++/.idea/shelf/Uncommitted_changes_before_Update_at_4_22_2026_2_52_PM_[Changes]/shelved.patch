@@ -1,0 +1,35 @@
+Index: main.cpp
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.cpp b/main.cpp
+new file mode 100644
+--- /dev/null	(date 1776880049206)
++++ b/main.cpp	(date 1776880049206)
+@@ -0,0 +1,5 @@
++// GPIB INTERFACE SYSTEM
++//
++//
++
++#include "main.h"
+\ No newline at end of file
+Index: main.h
+IDEA additional info:
+Subsystem: com.intellij.openapi.diff.impl.patch.CharsetEP
+<+>UTF-8
+===================================================================
+diff --git a/main.h b/main.h
+new file mode 100644
+--- /dev/null	(date 1776880000702)
++++ b/main.h	(date 1776880000702)
+@@ -0,0 +1,8 @@
++//
++// Created by heito on 4/22/2026.
++//
++
++#ifndef C_MAIN_H
++#define C_MAIN_H
++
++#endif //C_MAIN_H
+\ No newline at end of file
