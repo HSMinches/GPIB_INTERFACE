@@ -4,12 +4,6 @@
 > This section describes the testing procedure used to validate the Custom GPIB Instrument Interface System.  
 > The tests focus on serial communication, SCPI command execution, batch execution, datalogging, plotting, file handling, and error handling.
 
-<div align="center">
-
-[Back](implementacao.md) | [Next](conclusao.md)
-
-</div>
-
 ## General Overview
 
 The testing process was designed to verify whether the system correctly performs its main responsibilities:
