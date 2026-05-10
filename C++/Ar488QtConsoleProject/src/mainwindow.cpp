@@ -3,6 +3,12 @@
 
 #include "ar488controller.h"
 
+#include "core/constants.h"
+#include "core/csvutils.h"
+#include "core/scpiutils.h"
+#include "models/equipment.h"
+#include "ui/interactivechartview.h"
+
 #include <QAbstractItemView>
 #include <QComboBox>
 #include <QDateTime>
@@ -18,8 +24,6 @@
 #include <QLineEdit>
 #include <QList>
 #include <QMetaObject>
-#include <QMouseEvent>
-#include <QPainter>
 #include <QPlainTextEdit>
 #include <QPushButton>
 #include <QRadioButton>
@@ -37,7 +41,6 @@
 #include <QTimer>
 #include <QToolBox>
 #include <QVBoxLayout>
-#include <QWheelEvent>
 #include <QWidget>
 #include <QtCharts/QChart>
 #include <QtCharts/QChartView>
@@ -46,67 +49,6 @@
 #include <QtCharts/QValueAxis>
 
 namespace {
-constexpr int kMinGpibAddress = 1;
-constexpr int kMaxGpibAddress = 29;
-constexpr int kDefaultGpibAddress = 10;
-constexpr int kSidebarExpandedWidth = 390;
-constexpr int kSidebarCollapsedWidth = 96;
-
-class InteractiveChartView final : public QChartView {
-public:
-    explicit InteractiveChartView(QChart* chart, QWidget* parent = nullptr)
-        : QChartView(chart, parent) {
-        setRubberBand(QChartView::RectangleRubberBand);
-        setRenderHint(QPainter::Antialiasing, true);
-    }
-
-protected:
-    void wheelEvent(QWheelEvent* event) override {
-        if (event->angleDelta().y() > 0) {
-            chart()->zoom(1.15);
-        } else {
-            chart()->zoom(0.87);
-        }
-        event->accept();
-    }
-
-    void mousePressEvent(QMouseEvent* event) override {
-        if (event->button() == Qt::RightButton) {
-            panning_ = true;
-            lastPos_ = event->pos();
-            setCursor(Qt::ClosedHandCursor);
-            event->accept();
-            return;
-        }
-        QChartView::mousePressEvent(event);
-    }
-
-    void mouseMoveEvent(QMouseEvent* event) override {
-        if (panning_) {
-            const QPoint delta = event->pos() - lastPos_;
-            chart()->scroll(-delta.x(), delta.y());
-            lastPos_ = event->pos();
-            event->accept();
-            return;
-        }
-        QChartView::mouseMoveEvent(event);
-    }
-
-    void mouseReleaseEvent(QMouseEvent* event) override {
-        if (event->button() == Qt::RightButton && panning_) {
-            panning_ = false;
-            unsetCursor();
-            event->accept();
-            return;
-        }
-        QChartView::mouseReleaseEvent(event);
-    }
-
-private:
-    bool panning_ = false;
-    QPoint lastPos_;
-};
-
 QString stamp(const QString& message) {
     return QString("[%1] %2")
     .arg(QDateTime::currentDateTime().toString("yyyy-MM-dd HH:mm:ss"))
@@ -129,105 +71,6 @@ void styleTableHeader(QTableWidget* table) {
     table->verticalHeader()->setDefaultSectionSize(30);
 }
 
-QString escapeCsvField(const QString& value) {
-    QString escaped = value;
-    escaped.replace("\"", "\"\"");
-    return "\"" + escaped + "\"";
-}
-
-QStringList parseCsvLine(const QString& line) {
-    QStringList result;
-    QString field;
-    bool inQuotes = false;
-
-    for (int i = 0; i < line.size(); ++i) {
-        const QChar ch = line.at(i);
-
-        if (ch == '"') {
-            if (inQuotes && i + 1 < line.size() && line.at(i + 1) == '"') {
-                field += '"';
-                ++i;
-            } else {
-                inQuotes = !inQuotes;
-            }
-            continue;
-        }
-
-        if (ch == ',' && !inQuotes) {
-            result << field;
-            field.clear();
-            continue;
-        }
-
-        field += ch;
-    }
-
-    result << field;
-    return result;
-}
-
-QString sanitizeFileComponent(QString text) {
-    static const QString invalid = "\\/:*?\"<>| ,";
-    for (const QChar ch : invalid) {
-        text.replace(ch, '_');
-    }
-    while (text.contains("__")) {
-        text.replace("__", "_");
-    }
-    return text.trimmed().isEmpty() ? QString("log") : text.trimmed();
-}
-
-bool extractNumericReply(const QString& text, double& value) {
-    const QStringList lines = text.split(QRegularExpression("[\r\n]+"), Qt::SkipEmptyParts);
-    const QRegularExpression rx(R"(([+-]?(?:\d+(?:\.\d*)?|\.\d+)(?:[eE][+-]?\d+)?))");
-
-    for (const QString& rawLine : lines) {
-        const QString line = rawLine.trimmed();
-        if (line.isEmpty()) {
-            continue;
-        }
-
-        const QRegularExpressionMatch match = rx.match(line);
-        if (!match.hasMatch()) {
-            continue;
-        }
-
-        bool ok = false;
-        const double parsed = match.captured(1).toDouble(&ok);
-        if (ok) {
-            value = parsed;
-            return true;
-        }
-    }
-
-    return false;
-}
-
-bool parseGraphCsvRow(const QStringList& fields, QDateTime& timestamp, double& value) {
-    if (fields.size() >= 6) {
-        timestamp = QDateTime::fromString(fields.at(0).trimmed(), Qt::ISODateWithMs);
-        if (!timestamp.isValid()) {
-            timestamp = QDateTime::fromString(fields.at(0).trimmed(), Qt::ISODate);
-        }
-
-        bool ok = false;
-        value = fields.at(5).trimmed().toDouble(&ok);
-        return timestamp.isValid() && ok;
-    }
-
-    if (fields.size() >= 2) {
-        timestamp = QDateTime::fromString(fields.at(0).trimmed(), Qt::ISODateWithMs);
-        if (!timestamp.isValid()) {
-            timestamp = QDateTime::fromString(fields.at(0).trimmed(), Qt::ISODate);
-        }
-
-        bool ok = false;
-        value = fields.at(1).trimmed().toDouble(&ok);
-        return timestamp.isValid() && ok;
-    }
-
-    return false;
-}
 }  // namespace
 
 MainWindow::MainWindow(QWidget* parent)
@@ -306,8 +149,8 @@ QWidget* MainWindow::buildEquipmentSidebarPage(QWidget* parent) {
 
     auto* addressLabel = new QLabel("GPIB Address:", registryGroup);
     equipmentAddressSpin_ = new QSpinBox(registryGroup);
-    equipmentAddressSpin_->setRange(kMinGpibAddress, kMaxGpibAddress);
-    equipmentAddressSpin_->setValue(kDefaultGpibAddress);
+    equipmentAddressSpin_->setRange(AppConstants::MinGpibAddress, AppConstants::MaxGpibAddress);
+    equipmentAddressSpin_->setValue(AppConstants::DefaultGpibAddress);
 
     auto* codeLabel = new QLabel("Equipment Code:", registryGroup);
     equipmentCodeEdit_ = new QLineEdit(registryGroup);
@@ -558,8 +401,8 @@ void MainWindow::buildUi() {
     activeGpibLabel_->setObjectName("activeGpibLabel");
 
     gpibAddressSpin_ = new QSpinBox(activeGpibBar_);
-    gpibAddressSpin_->setRange(kMinGpibAddress, kMaxGpibAddress);
-    gpibAddressSpin_->setValue(kDefaultGpibAddress);
+    gpibAddressSpin_->setRange(AppConstants::MinGpibAddress, AppConstants::MaxGpibAddress);
+    gpibAddressSpin_->setValue(AppConstants::DefaultGpibAddress);
     gpibAddressSpin_->setMinimumWidth(100);
 
     activeGpibLayout->addStretch(1);
@@ -1092,17 +935,17 @@ void MainWindow::onQueryCompleted(const QString&, const QString& reply) {
         appendDatalogCsvRow(job, reply, now);
         ++job.samplesWritten;
 
-        if (job.mode == "Trigger Based") {
+        if (job.isTriggerBased()) {
             job.triggerPending = false;
         } else {
             job.nextDueTime = now.addMSecs(job.intervalMs);
         }
 
-        if (job.maxSamples > 0 && job.samplesWritten >= job.maxSamples) {
+        if (job.hasSampleLimitReached()) {
             job.finished = true;
         }
 
-        if (job.mode == "Computer Time Based" && job.endTime.isValid() && now >= job.endTime) {
+        if (job.isComputerTimeBased() && job.endTime.isValid() && now >= job.endTime) {
             job.finished = true;
         }
 
@@ -1118,7 +961,7 @@ void MainWindow::onQueryCompleted(const QString&, const QString& reply) {
         graphWaitingForReply_ = false;
 
         double value = 0.0;
-        if (extractNumericReply(reply, value)) {
+        if (ScpiUtils::extractNumericReply(reply, value)) {
             const qint64 x = QDateTime::currentDateTime().toMSecsSinceEpoch();
             graphSeries_->append(static_cast<qreal>(x), value);
             graphChart_->setTitle(QString("Live Graph — %1 [%2] — %3")
@@ -1217,13 +1060,19 @@ void MainWindow::onSaveEquipmentCsvClicked() {
     out << "\"Address\",\"Equipment Code\",\"Type\"\n";
 
     for (int row = 0; row < equipmentTable_->rowCount(); ++row) {
-        const QString address = equipmentTable_->item(row, 0) ? equipmentTable_->item(row, 0)->text() : QString();
-        const QString code = equipmentTable_->item(row, 1) ? equipmentTable_->item(row, 1)->text() : QString();
-        const QString type = equipmentTable_->item(row, 2) ? equipmentTable_->item(row, 2)->text() : QString();
+        Equipment equipment;
+        bool ok = false;
+        equipment.address = equipmentTable_->item(row, 0) ? equipmentTable_->item(row, 0)->text().toInt(&ok) : 0;
+        equipment.code = equipmentTable_->item(row, 1) ? equipmentTable_->item(row, 1)->text() : QString();
+        equipment.type = equipmentTable_->item(row, 2) ? equipmentTable_->item(row, 2)->text() : QString();
 
-        out << escapeCsvField(address) << ','
-            << escapeCsvField(code) << ','
-            << escapeCsvField(type) << '\n';
+        if (!ok || !equipment.isValid()) {
+            continue;
+        }
+
+        out << CsvUtils::escapeField(QString::number(equipment.address)) << ','
+            << CsvUtils::escapeField(equipment.code) << ','
+            << CsvUtils::escapeField(equipment.type) << '\n';
     }
 
     file.close();
@@ -1251,7 +1100,7 @@ void MainWindow::onLoadEquipmentCsvClicked() {
     QTextStream in(&file);
     in.setEncoding(QStringConverter::Utf8);
 
-    QList<QStringList> rows;
+    QList<Equipment> rows;
     bool firstLine = true;
 
     while (!in.atEnd()) {
@@ -1260,7 +1109,7 @@ void MainWindow::onLoadEquipmentCsvClicked() {
             continue;
         }
 
-        const QStringList fields = parseCsvLine(line);
+        const QStringList fields = CsvUtils::parseLine(line);
 
         if (firstLine) {
             firstLine = false;
@@ -1277,28 +1126,32 @@ void MainWindow::onLoadEquipmentCsvClicked() {
 
         bool ok = false;
         const int address = fields.at(0).trimmed().toInt(&ok);
-        if (!ok || address < kMinGpibAddress || address > kMaxGpibAddress) {
+        if (!ok || address < AppConstants::MinGpibAddress || address > AppConstants::MaxGpibAddress) {
             appendLog("Skipping invalid equipment address in CSV: " + fields.at(0));
             continue;
         }
 
-        rows.append({
-            QString::number(address),
-            fields.at(1).trimmed(),
-            fields.at(2).trimmed()
-        });
+        Equipment equipment;
+        equipment.address = address;
+        equipment.code = fields.at(1).trimmed();
+        equipment.type = fields.at(2).trimmed();
+        if (!equipment.isValid()) {
+            appendLog("Skipping incomplete equipment row in CSV: " + line);
+            continue;
+        }
+        rows.append(equipment);
     }
 
     file.close();
 
     equipmentTable_->setRowCount(0);
 
-    for (const QStringList& rowData : rows) {
+    for (const Equipment& equipment : rows) {
         const int row = equipmentTable_->rowCount();
         equipmentTable_->insertRow(row);
-        equipmentTable_->setItem(row, 0, new QTableWidgetItem(rowData.at(0)));
-        equipmentTable_->setItem(row, 1, new QTableWidgetItem(rowData.at(1)));
-        equipmentTable_->setItem(row, 2, new QTableWidgetItem(rowData.at(2)));
+        equipmentTable_->setItem(row, 0, new QTableWidgetItem(QString::number(equipment.address)));
+        equipmentTable_->setItem(row, 1, new QTableWidgetItem(equipment.code));
+        equipmentTable_->setItem(row, 2, new QTableWidgetItem(equipment.type));
     }
 
     if (equipmentTable_->rowCount() > 0) {
@@ -1448,9 +1301,9 @@ void MainWindow::onStartDatalogClicked() {
         job.stopped = false;
         job.triggerPending = false;
 
-        if (job.mode == "Continuous") {
+        if (job.isContinuous()) {
             job.nextDueTime = now;
-        } else if (job.mode == "Computer Time Based") {
+        } else if (job.isComputerTimeBased()) {
             job.nextDueTime = job.startTime;
         } else {
             job.nextDueTime = QDateTime();
@@ -1510,7 +1363,7 @@ void MainWindow::onTriggerDatalogClicked() {
 
     bool any = false;
     for (DataLogJob& job : datalogJobs_) {
-        if (!job.finished && !job.stopped && job.mode == "Trigger Based") {
+        if (!job.finished && !job.stopped && job.isTriggerBased()) {
             job.triggerPending = true;
             any = true;
         }
@@ -1537,11 +1390,11 @@ void MainWindow::onDatalogTimer() {
             continue;
         }
 
-        if (job.maxSamples > 0 && job.samplesWritten >= job.maxSamples) {
+        if (job.hasSampleLimitReached()) {
             job.finished = true;
         }
 
-        if (job.mode == "Computer Time Based" && job.endTime.isValid() && now > job.endTime) {
+        if (job.isComputerTimeBased() && job.endTime.isValid() && now > job.endTime) {
             job.finished = true;
         }
     }
@@ -1557,12 +1410,12 @@ void MainWindow::onDatalogTimer() {
             continue;
         }
 
-        if (job.mode == "Continuous") {
+        if (job.isContinuous()) {
             if (!job.nextDueTime.isValid() || now >= job.nextDueTime) {
                 selectedIndex = index;
                 break;
             }
-        } else if (job.mode == "Computer Time Based") {
+        } else if (job.isComputerTimeBased()) {
             if (now < job.startTime) {
                 continue;
             }
@@ -1573,7 +1426,7 @@ void MainWindow::onDatalogTimer() {
                 selectedIndex = index;
                 break;
             }
-        } else if (job.mode == "Trigger Based") {
+        } else if (job.isTriggerBased()) {
             if (job.triggerPending) {
                 selectedIndex = index;
                 break;
@@ -1677,7 +1530,7 @@ void MainWindow::onLoadGraphCsvClicked() {
             continue;
         }
 
-        const QStringList fields = parseCsvLine(line);
+        const QStringList fields = CsvUtils::parseLine(line);
 
         if (firstLine) {
             firstLine = false;
@@ -1689,7 +1542,7 @@ void MainWindow::onLoadGraphCsvClicked() {
 
         QDateTime timestamp;
         double value = 0.0;
-        if (!parseGraphCsvRow(fields, timestamp, value)) {
+        if (!ScpiUtils::parseGraphCsvRow(fields, timestamp, value)) {
             continue;
         }
 
@@ -1777,8 +1630,8 @@ void MainWindow::updateSidebarState() {
     }
 
     sidebarContent_->setVisible(sidebarExpanded_);
-    sidebarContainer_->setMinimumWidth(sidebarExpanded_ ? kSidebarExpandedWidth : kSidebarCollapsedWidth);
-    sidebarContainer_->setMaximumWidth(sidebarExpanded_ ? kSidebarExpandedWidth : kSidebarCollapsedWidth);
+    sidebarContainer_->setMinimumWidth(sidebarExpanded_ ? AppConstants::SidebarExpandedWidth : AppConstants::SidebarCollapsedWidth);
+    sidebarContainer_->setMaximumWidth(sidebarExpanded_ ? AppConstants::SidebarExpandedWidth : AppConstants::SidebarCollapsedWidth);
 
     sidebarToggleButton_->setText("CMD");
     sidebarToggleButton_->setToolTip(sidebarExpanded_ ? "Show command presets / collapse sidebar" : "Expand command sidebar");
@@ -1796,7 +1649,7 @@ void MainWindow::updateUiState() {
     const bool canConfigureDatalog = !datalogRunning_ && !graphLiveRunning_;
     const bool canConfigureGraph = !datalogRunning_;
     const bool hasTriggerJobs = std::any_of(datalogJobs_.cbegin(), datalogJobs_.cend(), [](const DataLogJob& job) {
-        return !job.finished && !job.stopped && job.mode == "Trigger Based";
+        return !job.finished && !job.stopped && job.isTriggerBased();
     });
 
     portCombo_->setEnabled(!connected_ && !busy_ && !datalogRunning_ && !graphLiveRunning_);
@@ -1916,32 +1769,29 @@ void MainWindow::refreshEquipmentSelectors() {
     graphEquipmentCombo_->clear();
 
     for (int row = 0; row < equipmentTable_->rowCount(); ++row) {
-        const QString address = equipmentTable_->item(row, 0) ? equipmentTable_->item(row, 0)->text() : QString();
-        const QString code = equipmentTable_->item(row, 1) ? equipmentTable_->item(row, 1)->text() : QString();
-        const QString type = equipmentTable_->item(row, 2) ? equipmentTable_->item(row, 2)->text() : QString();
-
         bool ok = false;
-        const int addressValue = address.toInt(&ok);
-        if (!ok) {
+        Equipment equipment;
+        equipment.address = equipmentTable_->item(row, 0) ? equipmentTable_->item(row, 0)->text().toInt(&ok) : 0;
+        equipment.code = equipmentTable_->item(row, 1) ? equipmentTable_->item(row, 1)->text() : QString();
+        equipment.type = equipmentTable_->item(row, 2) ? equipmentTable_->item(row, 2)->text() : QString();
+        if (!ok || !equipment.isValid()) {
             continue;
         }
 
-        const QString label = QString("%1 [%2] - %3").arg(code).arg(address).arg(type);
-
-        datalogEquipmentCombo_->addItem(label, addressValue);
+        datalogEquipmentCombo_->addItem(equipment.label(), equipment.address);
         {
             const int index = datalogEquipmentCombo_->count() - 1;
-            datalogEquipmentCombo_->setItemData(index, addressValue, Qt::UserRole);
-            datalogEquipmentCombo_->setItemData(index, code, Qt::UserRole + 1);
-            datalogEquipmentCombo_->setItemData(index, type, Qt::UserRole + 2);
+            datalogEquipmentCombo_->setItemData(index, equipment.address, Qt::UserRole);
+            datalogEquipmentCombo_->setItemData(index, equipment.code, Qt::UserRole + 1);
+            datalogEquipmentCombo_->setItemData(index, equipment.type, Qt::UserRole + 2);
         }
 
-        graphEquipmentCombo_->addItem(label, addressValue);
+        graphEquipmentCombo_->addItem(equipment.label(), equipment.address);
         {
             const int index = graphEquipmentCombo_->count() - 1;
-            graphEquipmentCombo_->setItemData(index, addressValue, Qt::UserRole);
-            graphEquipmentCombo_->setItemData(index, code, Qt::UserRole + 1);
-            graphEquipmentCombo_->setItemData(index, type, Qt::UserRole + 2);
+            graphEquipmentCombo_->setItemData(index, equipment.address, Qt::UserRole);
+            graphEquipmentCombo_->setItemData(index, equipment.code, Qt::UserRole + 1);
+            graphEquipmentCombo_->setItemData(index, equipment.type, Qt::UserRole + 2);
         }
     }
 
@@ -1974,25 +1824,6 @@ void MainWindow::refreshEquipmentSelectors() {
     }
 }
 
-QString MainWindow::datalogJobStatusText(const DataLogJob& job) const {
-    if (job.stopped) {
-        return "Stopped";
-    }
-    if (job.finished) {
-        return "Finished";
-    }
-    if (!datalogRunning_) {
-        return "Configured";
-    }
-    if (job.mode == "Trigger Based") {
-        return job.triggerPending ? "Trigger Pending" : "Armed";
-    }
-    if (job.mode == "Computer Time Based" && QDateTime::currentDateTime() < job.startTime) {
-        return "Waiting Start";
-    }
-    return "Running";
-}
-
 void MainWindow::refreshDatalogJobsTable() {
     datalogJobsTable_->setRowCount(0);
 
@@ -2006,11 +1837,11 @@ void MainWindow::refreshDatalogJobsTable() {
         datalogJobsTable_->setItem(row, 2, new QTableWidgetItem(job.equipmentType));
         datalogJobsTable_->setItem(row, 3, new QTableWidgetItem(job.query));
         datalogJobsTable_->setItem(row, 4, new QTableWidgetItem(job.mode));
-        datalogJobsTable_->setItem(row, 5, new QTableWidgetItem(job.mode == "Trigger Based" ? "-" : QString::number(job.intervalMs)));
+        datalogJobsTable_->setItem(row, 5, new QTableWidgetItem(job.isTriggerBased() ? "-" : QString::number(job.intervalMs)));
         datalogJobsTable_->setItem(row, 6, new QTableWidgetItem(job.maxSamples == 0 ? "Unlimited" : QString::number(job.maxSamples)));
         datalogJobsTable_->setItem(row, 7, new QTableWidgetItem(job.csvPath));
         datalogJobsTable_->setItem(row, 8, new QTableWidgetItem(QString::number(job.samplesWritten)));
-        datalogJobsTable_->setItem(row, 9, new QTableWidgetItem(datalogJobStatusText(job)));
+        datalogJobsTable_->setItem(row, 9, new QTableWidgetItem(job.statusText(datalogRunning_)));
     }
 
     if (datalogRunning_) {
@@ -2021,8 +1852,8 @@ void MainWindow::refreshDatalogJobsTable() {
 }
 
 QString MainWindow::defaultDatalogCsvPath(const QString& equipmentCode, const QString& query) const {
-    const QString base = sanitizeFileComponent(equipmentCode);
-    const QString queryPart = sanitizeFileComponent(query);
+    const QString base = CsvUtils::sanitizeFileComponent(equipmentCode);
+    const QString queryPart = CsvUtils::sanitizeFileComponent(query);
     const QString stampText = QDateTime::currentDateTime().toString("yyyyMMdd_HHmmss");
     return QDir::currentPath() + QDir::separator() + base + "_" + queryPart + "_" + stampText + ".csv";
 }
@@ -2036,12 +1867,12 @@ bool MainWindow::appendDatalogCsvRow(const DataLogJob& job, const QString& value
 
     QTextStream out(&file);
     out.setEncoding(QStringConverter::Utf8);
-    out << escapeCsvField(timestamp.toString(Qt::ISODateWithMs)) << ','
-        << escapeCsvField(QString::number(job.address)) << ','
-        << escapeCsvField(job.equipmentCode) << ','
-        << escapeCsvField(job.equipmentType) << ','
-        << escapeCsvField(job.query) << ','
-        << escapeCsvField(value) << '\n';
+    out << CsvUtils::escapeField(timestamp.toString(Qt::ISODateWithMs)) << ','
+        << CsvUtils::escapeField(QString::number(job.address)) << ','
+        << CsvUtils::escapeField(job.equipmentCode) << ','
+        << CsvUtils::escapeField(job.equipmentType) << ','
+        << CsvUtils::escapeField(job.query) << ','
+        << CsvUtils::escapeField(value) << '\n';
 
     file.close();
     return true;

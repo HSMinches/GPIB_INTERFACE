@@ -44,11 +44,6 @@ private:
     void initAdapter(int gpibAddress);
     void setGpibAddress(int gpibAddress);
 
-    bool isRawAr488Command(const QString& command) const;
-    bool ar488CommandShouldExpectReply(const QString& command) const;
-    bool isAdapterNoiseLine(const QString& line) const;
-    QString sanitizeReply(const QString& reply) const;
-
     void writeScpiInternal(int gpibAddress, const QString& command);
     QString queryPythonStyleInternal(int gpibAddress, const QString& command, int timeoutMs, int settleMs);
     QString queryScpiInternal(int gpibAddress, const QString& command, int timeoutMs, int settleMs);

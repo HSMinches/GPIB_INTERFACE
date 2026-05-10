@@ -1,0 +1,12 @@
+release/main.o
+release/mainwindow.o
+release/ar488controller.o
+release/csvutils.o
+release/scpiutils.o
+release/datalogjob.o
+release/ar488protocol.o
+release/batchscriptparser.o
+release/appstyle.o
+release/interactivechartview.o
+release/moc_mainwindow.o
+release/moc_ar488controller.o

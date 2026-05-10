@@ -10,6 +10,8 @@
 #include <QString>
 #include <QVector>
 
+#include "models/datalogjob.h"
+
 class Ar488Controller;
 class QChart;
 class QChartView;
@@ -78,25 +80,6 @@ private slots:
     void toggleSidebar();
 
 private:
-    struct DataLogJob {
-        int address = 10;
-        QString equipmentCode;
-        QString equipmentType;
-        QString query;
-        QString mode;
-        int intervalMs = 1000;
-        int maxSamples = 0;
-        QDateTime startTime;
-        QDateTime endTime;
-        QString csvPath;
-
-        int samplesWritten = 0;
-        QDateTime nextDueTime;
-        bool finished = false;
-        bool stopped = false;
-        bool triggerPending = false;
-    };
-
     Ar488Controller* controller_ = nullptr;
     QThread controllerThread_;
 
@@ -219,7 +202,6 @@ private:
 
     void refreshEquipmentSelectors();
     void refreshDatalogJobsTable();
-    QString datalogJobStatusText(const DataLogJob& job) const;
     QString defaultDatalogCsvPath(const QString& equipmentCode, const QString& query) const;
     bool appendDatalogCsvRow(const DataLogJob& job, const QString& value, const QDateTime& timestamp);
     void finalizeDatalogRunIfNeeded();

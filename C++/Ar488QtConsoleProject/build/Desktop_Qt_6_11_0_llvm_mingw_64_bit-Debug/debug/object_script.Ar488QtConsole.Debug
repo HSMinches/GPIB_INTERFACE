@@ -1,0 +1,12 @@
+debug/main.o
+debug/mainwindow.o
+debug/ar488controller.o
+debug/csvutils.o
+debug/scpiutils.o
+debug/datalogjob.o
+debug/ar488protocol.o
+debug/batchscriptparser.o
+debug/appstyle.o
+debug/interactivechartview.o
+debug/moc_mainwindow.o
+debug/moc_ar488controller.o
