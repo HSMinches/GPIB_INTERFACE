@@ -1,7 +1,7 @@
-## OBJECT ORIENTED ANALYSIS 
+# OBJECT ORIENTED ANALYSIS 
 
-# General description of the problem domain
+## General description of the problem domain
 
-# Use Case Diagram
+## Use Case Diagram
 
-# Problem Domain Diagram
+## Problem Domain Diagram
