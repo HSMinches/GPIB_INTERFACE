@@ -21,10 +21,10 @@ So the domain is a test-bench automation tool where the main concepts are instru
 ![USE CASE DIAGRAM](/DIAGRAMS/USE_CASES/UPD_UC.png)
 
 - [UC1: Direct Tasking](DIAGRAMS/USE_CASES/UC01:DirectTasking)
-- [UC2: Batch Tasking](/DIAGRAMS/USE_CASES/UC02:BatchTasking.md)
-- [UC3: Inject SCPI Query](/DIAGRAMS/USE_CASES/UC03:InjectSCPIQuery.md)
-- [UC4: ReceiveSCPIQuery](/DIAGRAMS/USE_CASES/UC04:ReceiveSCPIQuery.md)
-- [UC5: Datalogging](/DIAGRAMS/USE_CASES/UC05:Datalogging.md)
-- [UC6: Plotting](/DIAGRAMS/USE_CASES/UC06:Plotting.md)
+- [UC2: Batch Tasking](DIAGRAMS/USE_CASES/UC02:BatchTasking)
+- [UC3: Inject SCPI Query](DIAGRAMS/USE_CASES/UC03:InjectSCPIQuery)
+- [UC4: ReceiveSCPIQuery](DIAGRAMS/USE_CASES/UC04:ReceiveSCPIQuery)
+- [UC5: Datalogging](DIAGRAMS/USE_CASES/UC05:Datalogging)
+- [UC6: Plotting](DIAGRAMS/USE_CASES/UC06:Plotting)
 
 ## Problem Domain Diagram
