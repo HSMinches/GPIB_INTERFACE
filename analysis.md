@@ -20,7 +20,7 @@ So the domain is a test-bench automation tool where the main concepts are instru
 ## Use Case Diagram
 ![USE CASE DIAGRAM](/DIAGRAMS/USE_CASES/UPD_UC.png)
 
-- [UC1: Direct Tasking](/DIAGRAMS/USE_CASES/UC01:DirectTasking)
+- [UC1: Direct Tasking](/DIAGRAMS/USE_CASES/UC01:DirectTasking.md)
 - [UC2: Batch Tasking](/DIAGRAMS/USE_CASES/UC02:BatchTasking.md)
 - [UC3: Inject SCPI Query](/DIAGRAMS/USE_CASES/UC03:InjectSCPIQuery.md)
 - [UC4: ReceiveSCPIQuery](/DIAGRAMS/USE_CASES/UC04:ReceiveSCPIQuery.md)
