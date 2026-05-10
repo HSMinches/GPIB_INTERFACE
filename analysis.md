@@ -15,7 +15,7 @@ In practical terms, the system helps a lab user:
   - Save timestamped measurement data to CSV.
   - Display live or previously logged measurement data in a graph.
 
-So the domain is not only “a Qt serial app.” It is a test-bench automation tool where the main concepts are instruments, addresses, commands, replies, measurement samples, CSV logs, and visualization.
+So the domain is a test-bench automation tool where the main concepts are instruments, addresses, commands, replies, measurement samples, CSV logs, and visualization.
 
 ## Use Case Diagram
 ![USE CASE DIAGRAM](/DIAGRAMS/USE_CASES/UPD_UC.png)
