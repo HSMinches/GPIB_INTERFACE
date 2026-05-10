@@ -23,10 +23,3 @@ src/
 
 The CMake file now explicitly links `Qt6::Charts`, because the graph tab uses Qt Charts. qmake already includes `charts` through `QT += core gui widgets serialport charts`.
 
-## Extension points
-
-- Add new batch commands in `src/protocol/batchscriptparser.*`.
-- Change AR488 reply filtering or command classification in `src/protocol/ar488protocol.*`.
-- Reuse CSV and SCPI parsing utilities from `src/core/` instead of duplicating parsing code in UI classes.
-- Add more equipment metadata in `src/models/equipment.h` without changing protocol code.
-- Add datalog behavior in `src/models/datalogjob.*` and keep the UI focused on presentation and user actions.
