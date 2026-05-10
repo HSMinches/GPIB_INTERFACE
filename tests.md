@@ -116,7 +116,13 @@ The application starts successfully and displays the main interface.
 
 ## Status
 
-- Not executed
+- DONE
+
+20:46:54: The command "E:\Ar488QtConsoleProject_OOP_refactor\Ar488QtConsoleProject\build\Desktop_Qt_6_11_0_llvm_mingw_64_bit-Debug\debug\Ar488QtConsole.exe" finished successfully.
+
+20:46:56: Starting E:\Ar488QtConsoleProject_OOP_refactor\Ar488QtConsoleProject\build\Desktop_Qt_6_11_0_llvm_mingw_64_bit-Debug\debug\Ar488QtConsole.exe...
+
+<img width="1920" height="1047" alt="image" src="https://github.com/user-attachments/assets/a446425a-6354-4e16-a16d-36bab0bd9f7a" />
 
 ---
 
