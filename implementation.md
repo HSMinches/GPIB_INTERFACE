@@ -46,34 +46,3 @@ This makes the project more flexible because it can be compiled using different 
 The system communicates with instruments through an AR488-compatible USB-GPIB adapter. The adapter works as a bridge between the computer serial port and the GPIB bus.
 
 The application sends commands to the adapter through the serial interface. The adapter then forwards those commands to the selected GPIB instrument.
-
-### SCPI Commands
-
-SCPI commands are used as the communication language between the system and the laboratory instruments. Examples of SCPI commands include:
-
-- `*IDN?`
-- `MEAS:VOLT?`
-- `CONF:CURR`
-- `OUTP ON`
-
-Commands ending with `?` are treated as queries and usually expect a response from the instrument.
-
-### CSV Files
-
-CSV files are used to store and load structured data. In the system, CSV files are mainly used for:
-
-- Saving datalogging results;
-- Storing timestamped measurement values;
-- Loading previous measurement data for plotting.
-
-## Project Organization
-
-The project was organized into separate modules to improve maintainability and reduce coupling between unrelated functionalities.
-
-The main folders are:
-
-```text
-core/
-protocol/
-models/
-ui/
