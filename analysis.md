@@ -28,3 +28,4 @@ So the domain is a test-bench automation tool where the main concepts are instru
 - [UC6: Plotting](DIAGRAMS/USE_CASES/UC06:Plotting.md)
 
 ## Problem Domain Diagram
+![USE PROBLEM DIAGRAM](/DIAGRAMS/mermaid-diagram.png)
