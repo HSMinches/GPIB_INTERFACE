@@ -9,3 +9,10 @@ In this case, the interface will use a USB-GPIB adapter "AR488", like shown belo
 
 For more info about the adapter, check out this repo: https://github.com/Twilight-Logic/AR488
 
+<p align=center><strong>SUMMARY</strong></p>
+
+[**1. ANALYSIS**](./analysis.md)<br>
+[**2. OOP**](./project.md)<br>
+[**3. IMPLEMENTATION (C++)**](./implementation.md)<br>
+[**4. TESTS**](./tests.md)<br>
+
