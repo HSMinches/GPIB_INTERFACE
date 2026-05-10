@@ -3,7 +3,7 @@ Development of a GPIB (General Purpose Interface Bus) based interface to communi
 
 As basys, this project consists of a C++ with QT interface, to be able to generate SCPI queries for multiples workbench instruments, thus automating measurements workflow.
 
-In this case, this interface will use a USB-GPIB adapter, like shown below, although there can be other variations like e.g. ethernet-GPIB, this will be the cheapest and quickest development path to be taken. 
+In this case, the interface will use a USB-GPIB adapter "AR488", like shown below, although there can be other variations like e.g. ethernet-GPIB, this will be the cheapest and quickest development path to be taken. 
 
 ![Logo](DIAGRAMS/USE_CASES/GPIB_UC.jpg)
 
