@@ -1,3 +1,5 @@
+# UC01: Direct Tasking
+
 ## General Description
 
 This is the detailed description of the "Direct Tasking" use case of the Custom GPIB Instrument Interface System. It describes the manual execution of a single SCPI command/query by the user. In this mode, the user enters a command and sends it directly to a selected GPIB instrument through the USB-GPIB adapter.
@@ -66,5 +68,3 @@ After the execution of this use case, the command has either been successfully t
 2. A valid GPIB address must be selected before transmission;
 3. Commands ending with `?` are treated as queries and should expect a response;
 4. Communication errors must be shown to the user.
-
----
