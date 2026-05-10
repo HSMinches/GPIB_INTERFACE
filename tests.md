@@ -150,7 +150,10 @@ The serial port associated with the USB-GPIB adapter is listed by the applicatio
 
 ## Status
 
-- Not executed
+- DONE 
+
+<img width="314" height="87" alt="image" src="https://github.com/user-attachments/assets/34aef511-fab4-4cc1-ba64-ac5009646c93" />
+
 
 ---
 
@@ -178,7 +181,10 @@ The application successfully connects to the USB-GPIB adapter.
 
 ## Status
 
-- Not executed
+- DONE
+
+<img width="1481" height="264" alt="image" src="https://github.com/user-attachments/assets/00d7510f-d13a-4beb-ace2-f13786de2d13" />
+
 
 ---
 
@@ -205,7 +211,9 @@ The connection is closed, and the system prevents commands from being sent while
 
 ## Status
 
-- Not executed
+- DONE
+<img width="98" height="28" alt="image" src="https://github.com/user-attachments/assets/a780a27e-604e-4252-a76d-d6ca6961f84a" />
+
 
 ---
 
