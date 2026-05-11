@@ -480,7 +480,7 @@ The graph updates periodically with live measurement values.
 ## Status
 
 - DONE
-- 
+
 <img width="1488" height="910" alt="image" src="https://github.com/user-attachments/assets/6ec0f98e-2b5e-40a0-98aa-645fa7ac9a1c" />
 
 
@@ -509,7 +509,9 @@ Live data acquisition stops, and the graph remains visible with the collected po
 
 ## Status
 
-- Not executed
+- DONE
+<img width="1483" height="856" alt="image" src="https://github.com/user-attachments/assets/5bbcaf6d-9fdb-41f2-9a78-6c0b472f0b29" />
+
 
 ---
 
@@ -537,7 +539,9 @@ The system reads the CSV file and displays the stored measurement data on the gr
 
 ## Status
 
-- Not executed
+- DONE
+<img width="1484" height="851" alt="image" src="https://github.com/user-attachments/assets/b4a5d32c-27c4-477a-80c6-d702c76be201" />
+
 
 ---
 
@@ -566,7 +570,8 @@ The equipment is registered correctly and can be used by other parts of the syst
 
 ## Status
 
-- Not executed
+- DONE
+<img width="382" height="752" alt="image" src="https://github.com/user-attachments/assets/1320e8f2-5f67-4ecc-9bfe-a0b7b2b759f6" />
 
 ---
 
@@ -597,7 +602,7 @@ The interface remains responsive and allows the user to stop running operations.
 
 ---
 
-# TC23: Application Error Recovery
+# TC19: Application Error Recovery
 
 ## Objective
 
@@ -623,33 +628,6 @@ The system detects the error, informs the user, and allows a new connection atte
 ## Status
 
 - DONE
-
----
-
-# TC25: Build Test with qmake
-
-## Objective
-
-Verify whether the project can be built using qmake.
-
-## Preconditions
-
-Qt and qmake must be installed.
-
-## Test Steps
-
-1. Open the project in Qt Creator or use the terminal;
-2. Run qmake on the `.pro` file;
-3. Build the project;
-4. Verify whether the executable is generated.
-
-## Expected Result
-
-The project builds successfully using qmake.
-
-## Status
-
-- Not executed
 
 ---
 
