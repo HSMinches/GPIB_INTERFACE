@@ -390,7 +390,7 @@ The batch execution stops safely, and the system displays the partial execution 
 
 ## Status
 
-- Not executed
+- DONE
 
 ---
 
@@ -419,7 +419,8 @@ The system starts collecting measurement data periodically.
 
 ## Status
 
-- Not executed
+- DONE
+<img width="1492" height="864" alt="image" src="https://github.com/user-attachments/assets/3ad45e60-5b43-446d-98f7-0f8ca8cfc1a1" />
 
 ---
 
@@ -447,38 +448,12 @@ The CSV file is generated correctly and contains valid measurement data.
 
 ## Status
 
-- Not executed
+- DONE
+<img width="640" height="165" alt="image" src="https://github.com/user-attachments/assets/5be2c75c-0e01-4e81-9c6a-1ecf26bc9559" />
 
 ---
 
-# TC13: Invalid Measurement Response During Datalogging
-
-## Objective
-
-Verify whether the system handles non-numeric responses during datalogging.
-
-## Preconditions
-
-The datalogging query must produce a non-numeric or malformed response.
-
-## Test Steps
-
-1. Configure datalogging with a query that returns text instead of a number;
-2. Start the datalogging session;
-3. Observe how the system handles the response;
-4. Check whether the application remains stable.
-
-## Expected Result
-
-The system ignores or marks the invalid sample and does not crash.
-
-## Status
-
-- Not executed
-
----
-
-# TC14: Live Plotting
+# TC13: Live Plotting
 
 ## Objective
 
@@ -504,7 +479,9 @@ The graph updates periodically with live measurement values.
 
 ## Status
 
-- Not executed
+- DONE
+<img width="1488" height="910" alt="image" src="https://github.com/user-attachments/assets/6ec0f98e-2b5e-40a0-98aa-645fa7ac9a1c" />
+
 
 ---
 
@@ -675,53 +652,10 @@ The project builds successfully using qmake.
 
 ---
 
-## Test Summary
-
-| Test Case | Description | Expected Result | Status |
-|---|---|---|---|
-| TC01 | Application Startup | Application opens correctly | Not executed |
-| TC02 | Serial Port Detection | Adapter port is listed | Not executed |
-| TC03 | Serial Connection | Adapter connection is opened | Not executed |
-| TC04 | Serial Disconnection | Adapter connection is closed safely | Not executed |
-| TC05 | Direct SCPI Command Execution | Command is sent and response is shown | Not executed |
-| TC06 | Invalid Direct Command | Invalid command is rejected | Not executed |
-| TC07 | Invalid GPIB Address | Invalid address is rejected | Not executed |
-| TC08 | Receive SCPI Response | Response is received and displayed | Not executed |
-| TC09 | Response Timeout | Timeout is handled safely | Not executed |
-| TC10 | Batch Script Execution | Batch commands execute in order | Not executed |
-| TC11 | Invalid Batch Script | Invalid instruction is reported | Not executed |
-| TC12 | Stop Batch Execution | Batch stops safely | Not executed |
-| TC13 | Datalogging Start | Datalogging starts correctly | Not executed |
-| TC14 | Datalogging CSV Output | CSV file is generated correctly | Not executed |
-| TC15 | Stop Datalogging | Datalogging stops safely | Not executed |
-| TC16 | Invalid Measurement Response | Invalid sample is handled safely | Not executed |
-| TC17 | Live Plotting | Graph updates with live data | Not executed |
-| TC18 | Stop Live Plotting | Plotting stops safely | Not executed |
-| TC19 | Plot CSV File | CSV data is plotted | Not executed |
-| TC20 | Invalid CSV File for Plotting | Invalid file is rejected | Not executed |
-| TC21 | Equipment Registry | Equipment data is saved and shown | Not executed |
-| TC22 | UI Responsiveness | Interface remains responsive | Not executed |
-| TC23 | Error Recovery | System recovers from communication error | Not executed |
-| TC24 | Build Test with CMake | Project builds successfully | Not executed |
-| TC25 | Build Test with qmake | Project builds successfully | Not executed |
-
 ## Final Considerations
 
 The test procedure verifies both the internal behavior and the external communication behavior of the system. The most critical tests are related to serial communication, SCPI command execution, response handling, and datalogging, because these features depend directly on external hardware.
 
 The system should only be considered validated after the main communication flow has been tested with real equipment. However, many internal parts of the application, such as command parsing, CSV handling, and plotting, can also be tested without physical hardware.
 
-Future improvements to the testing process may include:
 
-- Automated unit tests for protocol formatting;
-- Automated unit tests for batch script parsing;
-- Automated CSV validation tests;
-- Mock serial communication tests;
-- Continuous integration builds on GitHub Actions;
-- Regression tests for future code changes.
-
-<div align="center">
-
-[Back](implementacao.md) | [Next](conclusao.md)
-
-</div>
