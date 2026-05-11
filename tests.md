@@ -480,6 +480,7 @@ The graph updates periodically with live measurement values.
 ## Status
 
 - DONE
+- 
 <img width="1488" height="910" alt="image" src="https://github.com/user-attachments/assets/6ec0f98e-2b5e-40a0-98aa-645fa7ac9a1c" />
 
 
