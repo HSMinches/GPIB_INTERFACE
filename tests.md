@@ -486,7 +486,7 @@ The graph updates periodically with live measurement values.
 
 ---
 
-# TC15: Stop Live Plotting
+# TC14: Stop Live Plotting
 
 ## Objective
 
@@ -515,7 +515,7 @@ Live data acquisition stops, and the graph remains visible with the collected po
 
 ---
 
-# TC16: Plot CSV File
+# TC15: Plot CSV File
 
 ## Objective
 
@@ -545,7 +545,7 @@ The system reads the CSV file and displays the stored measurement data on the gr
 
 ---
 
-# TC17: Equipment Registry
+# TC16: Equipment Registry
 
 ## Objective
 
@@ -575,7 +575,7 @@ The equipment is registered correctly and can be used by other parts of the syst
 
 ---
 
-# TC18: User Interface Responsiveness
+# TC17: User Interface Responsiveness
 
 ## Objective
 
@@ -602,7 +602,7 @@ The interface remains responsive and allows the user to stop running operations.
 
 ---
 
-# TC19: Application Error Recovery
+# TC18: Application Error Recovery
 
 ## Objective
 
