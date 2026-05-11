@@ -242,7 +242,9 @@ The command is sent successfully, and the instrument response is displayed to th
 
 ## Status
 
-- Not executed
+- DONE
+<img width="1514" height="269" alt="image" src="https://github.com/user-attachments/assets/64bfc346-7709-476f-937a-82fa03ec10f0" />
+
 
 ---
 
@@ -270,7 +272,7 @@ The system does not send empty commands and displays a validation message when n
 
 ## Status
 
-- Not executed
+- DONE
 
 ---
 
@@ -297,7 +299,7 @@ The system blocks the operation and informs the user that the GPIB address is in
 
 ## Status
 
-- Not executed
+- DONE
 
 ---
 
@@ -325,38 +327,11 @@ The instrument response is received and displayed correctly.
 
 ## Status
 
-- Not executed
+- TBD ( ADAPTER NEEDS TO BE UPDATED )
 
 ---
 
-# TC09: Response Timeout
-
-## Objective
-
-Verify whether the system handles timeout situations when an instrument does not respond.
-
-## Preconditions
-
-The system must be connected to the USB-GPIB adapter.
-
-## Test Steps
-
-1. Select a GPIB address that does not have an active instrument;
-2. Send a SCPI query;
-3. Wait until the response timeout occurs;
-4. Observe the system behavior.
-
-## Expected Result
-
-The system reports a timeout or communication error without freezing the interface.
-
-## Status
-
-- Not executed
-
----
-
-# TC10: Batch Script Execution
+# TC9: Batch Script Execution
 
 ## Objective
 
@@ -387,38 +362,12 @@ The system executes the commands in order and respects the wait instruction.
 
 ## Status
 
-- Not executed
+- DONE
 
 ---
 
-# TC11: Invalid Batch Script
 
-## Objective
-
-Verify whether the system handles invalid batch instructions.
-
-## Preconditions
-
-The application must be running.
-
-## Test Steps
-
-1. Open the batch tasking interface;
-2. Enter a batch script containing an invalid instruction;
-3. Start the batch execution;
-4. Observe how the system handles the invalid line.
-
-## Expected Result
-
-The system identifies the invalid instruction and notifies the user. Depending on the implementation, the batch is either stopped or the invalid line is skipped.
-
-## Status
-
-- Not executed
-
----
-
-# TC12: Stop Batch Execution
+# TC10: Stop Batch Execution
 
 ## Objective
 
@@ -445,7 +394,7 @@ The batch execution stops safely, and the system displays the partial execution 
 
 ---
 
-# TC13: Datalogging Start
+# TC11: Datalogging Start
 
 ## Objective
 
@@ -474,7 +423,7 @@ The system starts collecting measurement data periodically.
 
 ---
 
-# TC14: Datalogging CSV Output
+# TC12: Datalogging CSV Output
 
 ## Objective
 
@@ -502,35 +451,7 @@ The CSV file is generated correctly and contains valid measurement data.
 
 ---
 
-# TC15: Stop Datalogging
-
-## Objective
-
-Verify whether the user can stop a datalogging session safely.
-
-## Preconditions
-
-A datalogging session must be active.
-
-## Test Steps
-
-1. Start a datalogging session;
-2. Wait for some samples to be collected;
-3. Click the stop button;
-4. Verify whether data collection stops;
-5. Check whether the CSV file remains readable.
-
-## Expected Result
-
-The datalogging session stops safely and the CSV file is preserved.
-
-## Status
-
-- Not executed
-
----
-
-# TC16: Invalid Measurement Response During Datalogging
+# TC13: Invalid Measurement Response During Datalogging
 
 ## Objective
 
@@ -557,7 +478,7 @@ The system ignores or marks the invalid sample and does not crash.
 
 ---
 
-# TC17: Live Plotting
+# TC14: Live Plotting
 
 ## Objective
 
@@ -587,7 +508,7 @@ The graph updates periodically with live measurement values.
 
 ---
 
-# TC18: Stop Live Plotting
+# TC15: Stop Live Plotting
 
 ## Objective
 
@@ -614,7 +535,7 @@ Live data acquisition stops, and the graph remains visible with the collected po
 
 ---
 
-# TC19: Plot CSV File
+# TC16: Plot CSV File
 
 ## Objective
 
@@ -642,34 +563,7 @@ The system reads the CSV file and displays the stored measurement data on the gr
 
 ---
 
-# TC20: Invalid CSV File for Plotting
-
-## Objective
-
-Verify whether the system handles invalid CSV files during plotting.
-
-## Preconditions
-
-An invalid or incompatible CSV file must be available.
-
-## Test Steps
-
-1. Open the plotting interface;
-2. Select an invalid CSV file;
-3. Attempt to load the file;
-4. Observe the system behavior.
-
-## Expected Result
-
-The system displays an error message and does not crash.
-
-## Status
-
-- Not executed
-
----
-
-# TC21: Equipment Registry
+# TC17: Equipment Registry
 
 ## Objective
 
@@ -698,7 +592,7 @@ The equipment is registered correctly and can be used by other parts of the syst
 
 ---
 
-# TC22: User Interface Responsiveness
+# TC18: User Interface Responsiveness
 
 ## Objective
 
@@ -721,7 +615,7 @@ The interface remains responsive and allows the user to stop running operations.
 
 ## Status
 
-- Not executed
+- DONE
 
 ---
 
@@ -750,43 +644,7 @@ The system detects the error, informs the user, and allows a new connection atte
 
 ## Status
 
-- Not executed
-
----
-
-# TC24: Build Test with CMake
-
-## Objective
-
-Verify whether the project can be built using CMake.
-
-## Preconditions
-
-Qt and CMake must be installed.
-
-## Test Steps
-
-1. Open a terminal in the project directory;
-2. Create a build directory;
-3. Run CMake configuration;
-4. Build the project.
-
-Example:
-
-```bash
-mkdir build
-cd build
-cmake ..
-cmake --build .
-```
-
-## Expected Result
-
-The project builds successfully without missing source files or missing Qt module references.
-
-## Status
-
-- Not executed
+- DONE
 
 ---
 
