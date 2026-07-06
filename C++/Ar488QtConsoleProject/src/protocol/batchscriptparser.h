@@ -2,8 +2,15 @@
 
 #include <QString>
 
+#include <memory>
+
+class BatchAction;
+
 class BatchScriptParser final {
 public:
+    static std::unique_ptr<BatchAction> parseAction(const QString& originalLine, int sourceLineNumber);
+
+private:
     enum class LineType {
         Skip,
         Wait,

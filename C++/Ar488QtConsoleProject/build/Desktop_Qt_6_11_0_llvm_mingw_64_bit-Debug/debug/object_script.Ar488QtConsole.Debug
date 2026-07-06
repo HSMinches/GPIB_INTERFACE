@@ -6,6 +6,8 @@ debug/scpiutils.o
 debug/datalogjob.o
 debug/ar488protocol.o
 debug/batchscriptparser.o
+debug/batchaction.o
+debug/qtserialtransport.o
 debug/appstyle.o
 debug/interactivechartview.o
 debug/moc_mainwindow.o

@@ -14,6 +14,8 @@ SOURCES += \
     src/models/datalogjob.cpp \
     src/protocol/ar488protocol.cpp \
     src/protocol/batchscriptparser.cpp \
+    src/protocol/batchaction.cpp \
+    src/transport/qtserialtransport.cpp \
     src/ui/appstyle.cpp \
     src/ui/interactivechartview.cpp
 
@@ -27,6 +29,10 @@ HEADERS += \
     src/models/equipment.h \
     src/protocol/ar488protocol.h \
     src/protocol/batchscriptparser.h \
+    src/protocol/batchaction.h \
+    src/protocol/instrumentprotocol.h \
+    src/transport/serialtransport.h \
+    src/transport/qtserialtransport.h \
     src/ui/appstyle.h \
     src/ui/interactivechartview.h
 

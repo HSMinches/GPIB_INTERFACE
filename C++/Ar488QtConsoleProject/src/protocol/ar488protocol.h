@@ -2,9 +2,18 @@
 
 #include <QString>
 
-class Ar488Protocol final {
+#include "protocol/instrumentprotocol.h"
+
+class Ar488Protocol final : public InstrumentProtocol {
 public:
-    Ar488Protocol() = delete;
+    Ar488Protocol() = default;
+    ~Ar488Protocol() override = default;
+
+private:
+    QString normalizeCommandImpl(QString command) const override;
+    bool isTransportCommandImpl(const QString& command) const override;
+    bool expectsTransportReplyImpl(const QString& command) const override;
+    QString cleanReplyImpl(const QString& reply) const override;
 
     static QString stripCommandLineEnding(QString text);
     static bool isRawCommand(const QString& command);

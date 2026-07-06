@@ -4,6 +4,7 @@
 #include "core/constants.h"
 #include "protocol/ar488protocol.h"
 #include "protocol/batchscriptparser.h"
+#include "transport/qtserialtransport.h"
 
 #include <QElapsedTimer>
 #include <QIODevice>
@@ -11,6 +12,7 @@
 #include <QThread>
 
 #include <algorithm>
+#include <memory>
 #include <stdexcept>
 
 namespace {
@@ -20,8 +22,12 @@ namespace {
 }  // namespace
 
 Ar488Controller::Ar488Controller(QObject* parent)
-    : QObject(parent), serial_(this) {
+    : QObject(parent),
+      serial_(std::make_unique<QtSerialTransport>(this)),
+      protocol_(std::make_unique<Ar488Protocol>()) {
 }
+
+Ar488Controller::~Ar488Controller() = default;
 
 void Ar488Controller::setBusy(bool busy) {
     if (busy_ == busy) {
@@ -32,31 +38,31 @@ void Ar488Controller::setBusy(bool busy) {
 }
 
 void Ar488Controller::ensureOpen() const {
-    if (!serial_.isOpen()) {
+    if (!serial_->isOpen()) {
         fail("Serial port is not open.");
     }
 }
 
 void Ar488Controller::clearBuffers() {
     ensureOpen();
-    serial_.clear(QSerialPort::AllDirections);
+    serial_->clear(QSerialPort::AllDirections);
 }
 
 void Ar488Controller::writeLine(const QString& line) {
     ensureOpen();
 
-    const QByteArray payload = Ar488Protocol::stripCommandLineEnding(line).toUtf8() + '\n';
-    const qint64 written = serial_.write(payload);
+    const QByteArray payload = protocol_->normalizeCommand(line).toUtf8() + '\n';
+    const qint64 written = serial_->write(payload);
 
     if (written < 0) {
-        fail("Serial write failed: " + serial_.errorString());
+        fail("Serial write failed: " + serial_->errorString());
     }
 
-    if (!serial_.waitForBytesWritten(1000)) {
-        fail("Serial write timeout: " + serial_.errorString());
+    if (!serial_->waitForBytesWritten(1000)) {
+        fail("Serial write timeout: " + serial_->errorString());
     }
 
-    serial_.flush();
+    serial_->flush();
 }
 
 QString Ar488Controller::readUntilIdle(int totalTimeoutMs, int idleTimeoutMs) {
@@ -68,9 +74,9 @@ QString Ar488Controller::readUntilIdle(int totalTimeoutMs, int idleTimeoutMs) {
     qint64 lastRxMs = timer.elapsed();
 
     while (timer.elapsed() < totalTimeoutMs) {
-        const qint64 waiting = serial_.bytesAvailable();
+        const qint64 waiting = serial_->bytesAvailable();
         if (waiting > 0) {
-            const QByteArray chunk = serial_.read(waiting);
+            const QByteArray chunk = serial_->read(waiting);
             if (!chunk.isEmpty()) {
                 data += chunk;
                 lastRxMs = timer.elapsed();
@@ -78,8 +84,8 @@ QString Ar488Controller::readUntilIdle(int totalTimeoutMs, int idleTimeoutMs) {
             }
         }
 
-        if (serial_.waitForReadyRead(20)) {
-            const QByteArray chunk = serial_.read(1);
+        if (serial_->waitForReadyRead(20)) {
+            const QByteArray chunk = serial_->read(1);
             if (!chunk.isEmpty()) {
                 data += chunk;
                 lastRxMs = timer.elapsed();
@@ -91,14 +97,14 @@ QString Ar488Controller::readUntilIdle(int totalTimeoutMs, int idleTimeoutMs) {
             break;
         }
 
-        if (serial_.error() != QSerialPort::NoError &&
-            serial_.error() != QSerialPort::TimeoutError) {
-            fail("Serial read failed: " + serial_.errorString());
+        if (serial_->error() != QSerialPort::NoError &&
+            serial_->error() != QSerialPort::TimeoutError) {
+            fail("Serial read failed: " + serial_->errorString());
         }
     }
 
-    if (serial_.bytesAvailable() > 0) {
-        data += serial_.readAll();
+    if (serial_->bytesAvailable() > 0) {
+        data += serial_->readAll();
     }
 
     return QString::fromUtf8(data).trimmed();
@@ -119,13 +125,13 @@ void Ar488Controller::initAdapter(int gpibAddress) {
     ar488Cmd("++eos 2");
     ar488Cmd("++eot_enable 1");
     ar488Cmd("++eot_char 10");
-    ar488Cmd(QString("++read_tmo_ms %1").arg(AppConstants::DefaultReadTimeoutMs));
+    ar488Cmd(QString("++read_tmo_ms %1").arg(AppConstants::defaultReadTimeoutMs()));
     ar488Cmd("++ifc");
     ar488Cmd(QString("++addr %1").arg(gpibAddress));
 }
 
 void Ar488Controller::setGpibAddress(int gpibAddress) {
-    currentGpibAddress_ = std::clamp(gpibAddress, AppConstants::MinGpibAddress, AppConstants::MaxGpibAddress);
+    currentGpibAddress_ = std::clamp(gpibAddress, AppConstants::minGpibAddress(), AppConstants::maxGpibAddress());
     ar488Cmd(QString("++addr %1").arg(currentGpibAddress_));
 }
 
@@ -148,7 +154,7 @@ QString Ar488Controller::queryPythonStyleInternal(
     QThread::msleep(static_cast<unsigned long>(settleMs));
     writeLine("++read eoi");
 
-    QString reply = Ar488Protocol::sanitizeReply(readUntilIdle(timeoutMs, 250));
+    QString reply = protocol_->cleanReply(readUntilIdle(timeoutMs, 250));
     if (!reply.isEmpty()) {
         return reply;
     }
@@ -158,7 +164,7 @@ QString Ar488Controller::queryPythonStyleInternal(
     QThread::msleep(static_cast<unsigned long>(settleMs));
     writeLine("++read");
 
-    return Ar488Protocol::sanitizeReply(readUntilIdle(timeoutMs, 250));
+    return protocol_->cleanReply(readUntilIdle(timeoutMs, 250));
 }
 
 QString Ar488Controller::queryScpiInternal(
@@ -183,24 +189,24 @@ void Ar488Controller::openPort(const QString& portName, int baudRate, int gpibAd
     setBusy(true);
 
     try {
-        if (serial_.isOpen()) {
-            serial_.close();
+        if (serial_->isOpen()) {
+            serial_->close();
         }
 
-        serial_.setPortName(portName);
-        serial_.setBaudRate(baudRate);
-        serial_.setDataBits(QSerialPort::Data8);
-        serial_.setParity(QSerialPort::NoParity);
-        serial_.setStopBits(QSerialPort::OneStop);
-        serial_.setFlowControl(QSerialPort::NoFlowControl);
+        serial_->setPortName(portName);
+        serial_->setBaudRate(baudRate);
+        serial_->setDataBits(QSerialPort::Data8);
+        serial_->setParity(QSerialPort::NoParity);
+        serial_->setStopBits(QSerialPort::OneStop);
+        serial_->setFlowControl(QSerialPort::NoFlowControl);
 
-        if (!serial_.open(QIODevice::ReadWrite)) {
-            fail(QString("Open failed for %1: %2").arg(portName, serial_.errorString()));
+        if (!serial_->open(QIODevice::ReadWrite)) {
+            fail(QString("Open failed for %1: %2").arg(portName, serial_->errorString()));
         }
 
         QThread::msleep(2000);
 
-        currentGpibAddress_ = std::clamp(gpibAddress, AppConstants::MinGpibAddress, AppConstants::MaxGpibAddress);
+        currentGpibAddress_ = std::clamp(gpibAddress, AppConstants::minGpibAddress(), AppConstants::maxGpibAddress());
         clearBuffers();
         initAdapter(currentGpibAddress_);
         clearBuffers();
@@ -214,8 +220,8 @@ void Ar488Controller::openPort(const QString& portName, int baudRate, int gpibAd
             emit logMessage("AR488: " + version);
         }
     } catch (const std::exception& ex) {
-        if (serial_.isOpen()) {
-            serial_.close();
+        if (serial_->isOpen()) {
+            serial_->close();
         }
         emit errorOccurred(QString::fromUtf8(ex.what()));
         emit connectionChanged(false, "Disconnected");
@@ -232,8 +238,8 @@ void Ar488Controller::closePort() {
 
     setBusy(true);
 
-    if (serial_.isOpen()) {
-        serial_.close();
+    if (serial_->isOpen()) {
+        serial_->close();
         emit logMessage("Serial port closed.");
     }
 
@@ -279,7 +285,7 @@ void Ar488Controller::writeScpi(int gpibAddress, const QString& command) {
             fail("Command is empty.");
         }
 
-        if (Ar488Protocol::isRawCommand(trimmed)) {
+        if (protocol_->isTransportCommand(trimmed)) {
             ar488Cmd(trimmed, false);
             emit logMessage(QString("AR488 TX  %1").arg(trimmed));
             emit writeCompleted(trimmed);
@@ -311,11 +317,11 @@ void Ar488Controller::queryScpi(int gpibAddress, const QString& command) {
             fail("Command is empty.");
         }
 
-        if (Ar488Protocol::isRawCommand(trimmed)) {
-            const bool expectReply = Ar488Protocol::commandExpectsReply(trimmed);
+        if (protocol_->isTransportCommand(trimmed)) {
+            const bool expectReply = protocol_->expectsTransportReply(trimmed);
             emit logMessage(QString("AR488 TX? %1").arg(trimmed));
 
-            const QString reply = Ar488Protocol::sanitizeReply(ar488Cmd(trimmed, expectReply, 1500));
+            const QString reply = protocol_->cleanReply(ar488Cmd(trimmed, expectReply, 1500));
 
             if (expectReply) {
                 emit logMessage(QString("AR488 RX  %1").arg(reply.isEmpty() ? "<empty>" : reply));
@@ -348,6 +354,50 @@ void Ar488Controller::queryScpi(int gpibAddress, const QString& command) {
     setBusy(false);
 }
 
+void Ar488Controller::waitBatch(int delayMs) {
+    emit logMessage(QString("BATCH WAIT %1 ms").arg(delayMs));
+    QThread::msleep(static_cast<unsigned long>(delayMs));
+}
+
+void Ar488Controller::executeBatchCommand(const QString& command, bool forceWrite, bool forceQuery) {
+    if (protocol_->isTransportCommand(command)) {
+        const bool expectReply = forceQuery || protocol_->expectsTransportReply(command);
+
+        emit logMessage(QString("BATCH AR488 TX%1 %2")
+                            .arg(expectReply ? "?" : "")
+                            .arg(command));
+
+        const QString reply = protocol_->cleanReply(ar488Cmd(command, expectReply, 2000));
+
+        if (expectReply) {
+            emit logMessage(QString("BATCH AR488 RX %1").arg(reply.isEmpty() ? "<empty>" : reply));
+            emit batchLineResult(command, reply);
+        }
+
+        return;
+    }
+
+    const bool isQuery = forceQuery || (!forceWrite && command.endsWith('?'));
+
+    if (!isQuery) {
+        writeScpiInternal(activeBatchGpibAddress_, command);
+        emit logMessage(QString("BATCH SCPI TX  [%1] %2").arg(activeBatchGpibAddress_).arg(command));
+        return;
+    }
+
+    emit logMessage(QString("BATCH SCPI TX? [%1] %2").arg(activeBatchGpibAddress_).arg(command));
+
+    QString reply;
+    if (command.compare("*IDN?", Qt::CaseInsensitive) == 0) {
+        reply = queryIdnInternal(activeBatchGpibAddress_);
+    } else {
+        reply = queryScpiInternal(activeBatchGpibAddress_, command, 4000, 150);
+    }
+
+    emit logMessage(QString("BATCH SCPI RX  [%1] %2").arg(activeBatchGpibAddress_).arg(reply.isEmpty() ? "<empty>" : reply));
+    emit batchLineResult(command, reply);
+}
+
 void Ar488Controller::runBatch(int gpibAddress, const QString& script) {
     if (busy_) {
         emit logMessage("Busy; batch ignored.");
@@ -359,61 +409,14 @@ void Ar488Controller::runBatch(int gpibAddress, const QString& script) {
     try {
         ensureOpen();
 
+        activeBatchGpibAddress_ = gpibAddress;
         const QStringList lines = script.split('\n', Qt::KeepEmptyParts);
         emit batchStarted();
         emit logMessage(QString("Batch started at GPIB address %1").arg(gpibAddress));
 
         for (int index = 0; index < lines.size(); ++index) {
-            const auto parsed = BatchScriptParser::parseLine(lines.at(index), index + 1);
-
-            if (parsed.type == BatchScriptParser::LineType::Skip) {
-                continue;
-            }
-
-            if (parsed.type == BatchScriptParser::LineType::Wait) {
-                emit logMessage(QString("BATCH WAIT %1 ms").arg(parsed.delayMs));
-                QThread::msleep(static_cast<unsigned long>(parsed.delayMs));
-                continue;
-            }
-
-            const QString command = parsed.command;
-
-            if (Ar488Protocol::isRawCommand(command)) {
-                const bool expectReply = parsed.forceQuery || Ar488Protocol::commandExpectsReply(command);
-
-                emit logMessage(QString("BATCH AR488 TX%1 %2")
-                                    .arg(expectReply ? "?" : "")
-                                    .arg(command));
-
-                const QString reply = Ar488Protocol::sanitizeReply(ar488Cmd(command, expectReply, 2000));
-
-                if (expectReply) {
-                    emit logMessage(QString("BATCH AR488 RX %1").arg(reply.isEmpty() ? "<empty>" : reply));
-                    emit batchLineResult(command, reply);
-                }
-
-                continue;
-            }
-
-            const bool isQuery = parsed.forceQuery || (!parsed.forceWrite && command.endsWith('?'));
-
-            if (!isQuery) {
-                writeScpiInternal(gpibAddress, command);
-                emit logMessage(QString("BATCH SCPI TX  [%1] %2").arg(gpibAddress).arg(command));
-                continue;
-            }
-
-            emit logMessage(QString("BATCH SCPI TX? [%1] %2").arg(gpibAddress).arg(command));
-
-            QString reply;
-            if (command.compare("*IDN?", Qt::CaseInsensitive) == 0) {
-                reply = queryIdnInternal(gpibAddress);
-            } else {
-                reply = queryScpiInternal(gpibAddress, command, 4000, 150);
-            }
-
-            emit logMessage(QString("BATCH SCPI RX  [%1] %2").arg(gpibAddress).arg(reply.isEmpty() ? "<empty>" : reply));
-            emit batchLineResult(command, reply);
+            const auto action = BatchScriptParser::parseAction(lines.at(index), index + 1);
+            action->execute(*this);
         }
 
         emit logMessage("Batch finished.");

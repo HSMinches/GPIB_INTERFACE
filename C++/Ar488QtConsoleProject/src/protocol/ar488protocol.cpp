@@ -3,6 +3,25 @@
 #include <QRegularExpression>
 #include <QStringList>
 
+#include <utility>
+
+
+QString Ar488Protocol::normalizeCommandImpl(QString command) const {
+    return stripCommandLineEnding(std::move(command));
+}
+
+bool Ar488Protocol::isTransportCommandImpl(const QString& command) const {
+    return isRawCommand(command);
+}
+
+bool Ar488Protocol::expectsTransportReplyImpl(const QString& command) const {
+    return commandExpectsReply(command);
+}
+
+QString Ar488Protocol::cleanReplyImpl(const QString& reply) const {
+    return sanitizeReply(reply);
+}
+
 QString Ar488Protocol::stripCommandLineEnding(QString text) {
     while (!text.isEmpty() && (text.endsWith('\n') || text.endsWith('\r'))) {
         text.chop(1);

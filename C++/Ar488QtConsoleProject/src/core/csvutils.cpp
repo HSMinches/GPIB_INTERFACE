@@ -1,9 +1,7 @@
 #include "csvutils.h"
 
 QString CsvUtils::escapeField(const QString& value) {
-    QString escaped = value;
-    escaped.replace("\"", "\"\"");
-    return "\"" + escaped + "\"";
+    return quoteEscaped(value);
 }
 
 QStringList CsvUtils::parseLine(const QString& line) {
@@ -14,8 +12,8 @@ QStringList CsvUtils::parseLine(const QString& line) {
     for (int i = 0; i < line.size(); ++i) {
         const QChar ch = line.at(i);
 
-        if (ch == '"') {
-            if (inQuotes && i + 1 < line.size() && line.at(i + 1) == '"') {
+        if (isQuote(ch)) {
+            if (inQuotes && i + 1 < line.size() && isQuote(line.at(i + 1))) {
                 field += '"';
                 ++i;
             } else {
@@ -24,7 +22,7 @@ QStringList CsvUtils::parseLine(const QString& line) {
             continue;
         }
 
-        if (ch == ',' && !inQuotes) {
+        if (isFieldSeparator(ch) && !inQuotes) {
             result << field;
             field.clear();
             continue;
@@ -38,12 +36,37 @@ QStringList CsvUtils::parseLine(const QString& line) {
 }
 
 QString CsvUtils::sanitizeFileComponent(QString text) {
-    static const QString invalid = "\\/:*?\"<>| ,";
-    for (const QChar ch : invalid) {
-        text.replace(ch, '_');
+    for (int i = 0; i < text.size(); ++i) {
+        if (isInvalidFileComponentChar(text.at(i))) {
+            text[i] = '_';
+        }
     }
+
+    const QString sanitized = collapseRepeatedUnderscores(text).trimmed();
+    return sanitized.isEmpty() ? QString("log") : sanitized;
+}
+
+QString CsvUtils::quoteEscaped(QString value) {
+    value.replace("\"", "\"\"");
+    return "\"" + value + "\"";
+}
+
+bool CsvUtils::isQuote(QChar ch) {
+    return ch == '"';
+}
+
+bool CsvUtils::isFieldSeparator(QChar ch) {
+    return ch == ',';
+}
+
+bool CsvUtils::isInvalidFileComponentChar(QChar ch) {
+    static const QString invalid = "\\/:*?\"<>| ,";
+    return invalid.contains(ch);
+}
+
+QString CsvUtils::collapseRepeatedUnderscores(QString text) {
     while (text.contains("__")) {
         text.replace("__", "_");
     }
-    return text.trimmed().isEmpty() ? QString("log") : text.trimmed();
+    return text;
 }

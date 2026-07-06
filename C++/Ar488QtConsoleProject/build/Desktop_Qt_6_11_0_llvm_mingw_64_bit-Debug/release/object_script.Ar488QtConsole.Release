@@ -6,6 +6,8 @@ release/scpiutils.o
 release/datalogjob.o
 release/ar488protocol.o
 release/batchscriptparser.o
+release/batchaction.o
+release/qtserialtransport.o
 release/appstyle.o
 release/interactivechartview.o
 release/moc_mainwindow.o

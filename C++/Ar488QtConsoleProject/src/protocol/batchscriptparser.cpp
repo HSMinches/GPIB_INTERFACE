@@ -1,5 +1,7 @@
 #include "batchscriptparser.h"
 
+#include "protocol/batchaction.h"
+
 #include <QStringList>
 
 #include <stdexcept>
@@ -80,4 +82,28 @@ BatchScriptParser::ParsedLine BatchScriptParser::parseLine(
     parsed.type = LineType::Command;
     parsed.command = command;
     return parsed;
+}
+
+
+std::unique_ptr<BatchAction> BatchScriptParser::parseAction(
+    const QString& originalLine,
+    int sourceLineNumber
+    ) {
+    const ParsedLine parsed = parseLine(originalLine, sourceLineNumber);
+
+    switch (parsed.type) {
+    case LineType::Skip:
+        return std::make_unique<SkipBatchAction>(parsed.sourceLineNumber);
+    case LineType::Wait:
+        return std::make_unique<WaitBatchAction>(parsed.sourceLineNumber, parsed.delayMs);
+    case LineType::Command:
+        return std::make_unique<CommandBatchAction>(
+            parsed.sourceLineNumber,
+            parsed.command,
+            parsed.forceWrite,
+            parsed.forceQuery
+            );
+    }
+
+    return std::make_unique<SkipBatchAction>(sourceLineNumber);
 }

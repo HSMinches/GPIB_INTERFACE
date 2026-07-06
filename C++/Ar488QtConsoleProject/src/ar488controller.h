@@ -1,14 +1,21 @@
 #pragma once
 
 #include <QObject>
-#include <QSerialPort>
 #include <QString>
 
-class Ar488Controller final : public QObject {
+#include <memory>
+
+#include "protocol/batchaction.h"
+
+class InstrumentProtocol;
+class SerialTransport;
+
+class Ar488Controller final : public QObject, private BatchExecutionContext {
     Q_OBJECT
 
 public:
     explicit Ar488Controller(QObject* parent = nullptr);
+    ~Ar488Controller() override;
 
 public slots:
     void openPort(const QString& portName, int baudRate, int gpibAddress);
@@ -31,9 +38,11 @@ signals:
     void batchLineResult(const QString& command, const QString& reply);
 
 private:
-    QSerialPort serial_;
+    std::unique_ptr<SerialTransport> serial_;
+    std::unique_ptr<InstrumentProtocol> protocol_;
     bool busy_ = false;
     int currentGpibAddress_ = 10;
+    int activeBatchGpibAddress_ = 10;
 
     void setBusy(bool busy);
     void ensureOpen() const;
@@ -48,4 +57,7 @@ private:
     QString queryPythonStyleInternal(int gpibAddress, const QString& command, int timeoutMs, int settleMs);
     QString queryScpiInternal(int gpibAddress, const QString& command, int timeoutMs, int settleMs);
     QString queryIdnInternal(int gpibAddress);
+
+    void waitBatch(int delayMs) override;
+    void executeBatchCommand(const QString& command, bool forceWrite, bool forceQuery) override;
 };
